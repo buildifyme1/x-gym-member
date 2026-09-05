@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>X GYM — صفحة العضو</title>
+<meta name="theme-color" content="#0B1220">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="X GYM">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ===== شاشة تسجيل الدخول ===== -->
+<div id="login-screen">
+  <div class="login-logo">XG</div>
+  <div class="login-title">X GYM</div>
+  <div class="login-sub">صفحة العضو</div>
+  <div class="login-card">
+    <div class="login-error" id="login-error"></div>
+    <div class="field">
+      <label>رقم العضوية (Member ID)</label>
+      <input type="text" id="login-id" placeholder="مثال: XG-0001" dir="ltr" style="text-align:left">
+    </div>
+    <div class="field">
+      <label>رقم الموبايل المسجل</label>
+      <input type="tel" id="login-pin" placeholder="01xxxxxxxxx" inputmode="numeric" dir="ltr" style="text-align:left;letter-spacing:1px">
+    </div>
+    <button class="btn btn-gold" id="login-btn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text3)">
+      استخدم رقم العضوية ورقم الموبايل المسجّل عندنا للدخول
+    </div>
+  </div>
+</div>
+
+<!-- ===== التطبيق ===== -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">X GYM</div>
+    <button class="icon-btn" onclick="logout()"><i class="fas fa-arrow-right-from-bracket"></i></button>
+  </div>
+
+  <!-- الرئيسية -->
+  <div class="tab-panel active" id="home-panel"></div>
+
+  <!-- الحضور -->
+  <div class="tab-panel" id="attendance-panel-wrap">
+    <div style="padding:0 2px 10px;font-size:14px;font-weight:800">سجل الحضور</div>
+    <div id="attendance-panel"></div>
+  </div>
+
+  <!-- الباركود -->
+  <div class="tab-panel" id="barcode-panel-wrap">
+    <div class="barcode-card">
+      <div class="gym-name">X GYM</div>
+      <div id="bc-name" style="font-size:14px;font-weight:700;color:#222"></div>
+      <div id="bc-sub" class="member-line"></div>
+      <svg id="member-barcode-svg" style="max-width:100%"></svg>
+    </div>
+    <div class="barcode-actions">
+      <button class="btn btn-gold" onclick="downloadBarcode()"><i class="fas fa-download"></i> تحميل</button>
+      <button class="btn btn-outline" onclick="printBarcode()"><i class="fas fa-print"></i> طباعة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== شريط التنقل السفلي ===== -->
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <button class="nav-btn active" id="nav-home" onclick="switchToMain('home')"><i class="fas fa-house"></i>الرئيسية</button>
+  <button class="nav-btn" id="nav-attendance" onclick="switchToMain('attendance')"><i class="fas fa-calendar-check"></i>الحضور</button>
+  <button class="nav-btn" id="nav-barcode" onclick="switchToMain('barcode')"><i class="fas fa-barcode"></i>الباركود</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="script.js"></script>
+<script>
+// إظهار شريط التنقل بعد الدخول + دعم التبويبات الثلاثة (الرئيسية/الحضور/الباركود)
+const _origLoad = loadMemberData;
+loadMemberData = async function(){
+  await _origLoad();
+  document.getElementById('bottom-nav').style.display = 'flex';
+};
+function switchToMain(tab){
+  document.querySelectorAll('#app > .tab-panel').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById(tab==='home' ? 'home-panel' : tab+'-panel-wrap').classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+}
+</script>
+</body>
+</html>
