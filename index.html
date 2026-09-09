@@ -20,43 +20,38 @@
 </head>
 <body>
 
-<!-- ===== شاشة الترحيب (Onboarding) ===== -->
-<div id="onboarding-screen">
+<!-- ===== شاشة تسجيل الدخول ===== -->
+<div id="login-screen">
   <!-- غيّر اسم الملف هنا لصورة الخلفية اللي هتضيفها -->
-  <img class="onb-bg-img" src="img2.jpeg" alt="">
+  <img class="onb-bg-img" src="img1.jpeg" alt="">
   <div class="onb-overlay"></div>
 
-  <!-- <div class="onb-top">
+  <div class="onb-top">
     <div class="onb-logo"><span class="onb-logo-x">X</span><span class="onb-logo-gym">GYM</span></div>
     <div class="onb-tagline">STRONGER EVERYDAY</div>
-  </div> -->
+  </div>
 
   <div class="onb-sheet">
     <div class="onb-sheet-handle"></div>
-    <div class="onb-title">أنت أقرب لهدفك</div>
-    <div class="onb-desc">نظام متكامل لمتابعة حضورك<br>ومعلومات عضويتك</div>
-    <button class="btn btn-gold onb-cta" id="onb-start-btn">ابدأ الآن <i class="fas fa-arrow-right"></i></button>
-  </div>
-</div>
-
-<!-- ===== شاشة تسجيل الدخول ===== -->
-<div id="login-screen">
-  <div class="login-logo">XG</div>
-  <div class="login-title">X GYM</div>
-  <div class="login-sub">صفحة العضو</div>
-  <div class="login-card">
-    <div class="login-error" id="login-error"></div>
-    <div class="field">
-      <label>رقم العضوية (Member ID)</label>
-      <input type="text" id="login-id" placeholder="مثال: XG-0001" dir="ltr" style="text-align:left">
-    </div>
-    <div class="field">
-      <label>رقم الموبايل المسجل</label>
-      <input type="tel" id="login-pin" placeholder="01xxxxxxxxx" inputmode="numeric" dir="ltr" style="text-align:left;letter-spacing:1px">
-    </div>
-    <button class="btn btn-gold" id="login-btn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
-    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text3)">
-      استخدم رقم العضوية ورقم الموبايل المسجّل عندنا للدخول
+    <div class="login-heading">صفحة العضو</div>
+    <div class="login-card">
+      <div class="login-error" id="login-error"></div>
+      <div class="field-icon">
+        <div class="field-inputs">
+          <label>رقم العضوية (Member ID)</label>
+          <input type="text" id="login-id" placeholder="مثال: XG-0001" dir="ltr" style="text-align:left">
+        </div>
+        <div class="field-icon-el"><i class="fas fa-id-card"></i></div>
+      </div>
+      <div class="field-icon">
+        <div class="field-inputs">
+          <label>رقم الموبايل المسجل</label>
+          <input type="tel" id="login-pin" placeholder="01xxxxxxxxx" inputmode="numeric" dir="ltr" style="text-align:left;letter-spacing:1px">
+        </div>
+        <div class="field-icon-el"><i class="fas fa-mobile-screen"></i></div>
+      </div>
+      <button class="btn btn-gold" id="login-btn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
+      <div class="login-hint">استخدم رقم العضوية ورقم الموبايل المسجّل عندنا للدخول</div>
     </div>
   </div>
 </div>
@@ -103,19 +98,11 @@
 
 <script src="script.js"></script>
 <script>
-// شاشة الترحيب تظهر أولًا؛ لو فيه جلسة دخول محفوظة (مستخدم عائد) بنتخطاها تلقائيًا
-document.getElementById('login-screen').style.display = 'none';
-document.getElementById('onb-start-btn').addEventListener('click', () => {
-  document.getElementById('onboarding-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-});
-
 // إظهار شريط التنقل بعد الدخول + دعم التبويبات الثلاثة (الرئيسية/الحضور/الباركود)
 const _origLoad = loadMemberData;
 loadMemberData = async function(){
   await _origLoad();
   document.getElementById('bottom-nav').style.display = 'flex';
-  document.getElementById('onboarding-screen').style.display = 'none';
 };
 function switchToMain(tab){
   document.querySelectorAll('#app > .tab-panel').forEach(el=>el.classList.remove('active'));
