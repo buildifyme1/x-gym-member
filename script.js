@@ -48,6 +48,12 @@ async function doLogin(){
   const btn = document.getElementById('login-btn');
   errBox.style.display = 'none';
 
+  if(!navigator.onLine){
+    errBox.textContent = 'لا يوجد اتصال بالإنترنت — تسجيل الدخول محتاج نت';
+    errBox.style.display = 'block';
+    return;
+  }
+
   if(!idInput || !pin){
     errBox.textContent = 'اكتب رقم العضوية ورقم الموبايل';
     errBox.style.display = 'block';
@@ -368,3 +374,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-id').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('login-pin').focus(); });
   tryRestoreSession();
 });
+
+// تسجيل الـService Worker — يخزّن شكل التطبيق عشان يفتح فورًا من غير نت
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW register failed:', e));
+  });
+}
