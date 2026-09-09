@@ -20,6 +20,25 @@
 </head>
 <body>
 
+<!-- ===== شاشة الترحيب (Onboarding) ===== -->
+<div id="onboarding-screen">
+  <!-- غيّر اسم الملف هنا لصورة الخلفية اللي هتضيفها -->
+  <img class="onb-bg-img" src="img2.jpeg" alt="">
+  <div class="onb-overlay"></div>
+
+  <!-- <div class="onb-top">
+    <div class="onb-logo"><span class="onb-logo-x">X</span><span class="onb-logo-gym">GYM</span></div>
+    <div class="onb-tagline">STRONGER EVERYDAY</div>
+  </div> -->
+
+  <div class="onb-sheet">
+    <div class="onb-sheet-handle"></div>
+    <div class="onb-title">أنت أقرب لهدفك</div>
+    <div class="onb-desc">نظام متكامل لمتابعة حضورك<br>ومعلومات عضويتك</div>
+    <button class="btn btn-gold onb-cta" id="onb-start-btn">ابدأ الآن <i class="fas fa-arrow-right"></i></button>
+  </div>
+</div>
+
 <!-- ===== شاشة تسجيل الدخول ===== -->
 <div id="login-screen">
   <div class="login-logo">XG</div>
@@ -84,11 +103,19 @@
 
 <script src="script.js"></script>
 <script>
+// شاشة الترحيب تظهر أولًا؛ لو فيه جلسة دخول محفوظة (مستخدم عائد) بنتخطاها تلقائيًا
+document.getElementById('login-screen').style.display = 'none';
+document.getElementById('onb-start-btn').addEventListener('click', () => {
+  document.getElementById('onboarding-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
 // إظهار شريط التنقل بعد الدخول + دعم التبويبات الثلاثة (الرئيسية/الحضور/الباركود)
 const _origLoad = loadMemberData;
 loadMemberData = async function(){
   await _origLoad();
   document.getElementById('bottom-nav').style.display = 'flex';
+  document.getElementById('onboarding-screen').style.display = 'none';
 };
 function switchToMain(tab){
   document.querySelectorAll('#app > .tab-panel').forEach(el=>el.classList.remove('active'));

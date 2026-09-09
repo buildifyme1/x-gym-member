@@ -25,6 +25,38 @@ body::before{
 button,input{font-family:inherit}
 ::-webkit-scrollbar{width:0;height:0}
 
+/* ===== ONBOARDING ===== */
+#onboarding-screen{
+  position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;
+  min-height:100vh;min-height:100dvh;overflow:hidden;background:var(--bg);
+}
+.onb-bg-img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
+}
+.onb-overlay{
+  position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,rgba(6,10,18,0.75) 0%,rgba(6,10,18,0.15) 26%,rgba(6,10,18,0.25) 55%,rgba(6,10,18,0.55) 74%,rgba(6,10,18,0.97) 100%);
+}
+
+.onb-top{position:relative;z-index:2;text-align:center;padding:calc(46px + var(--safe-t)) 20px 4px}
+.onb-logo{font-family:'Orbitron',monospace;font-weight:900;font-size:30px}
+.onb-logo-x{background:linear-gradient(135deg,var(--gold3),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.onb-logo-gym{color:var(--text);margin-right:5px;letter-spacing:1px}
+.onb-tagline{margin-top:6px;font-size:11px;letter-spacing:4px;color:var(--gold3);font-weight:700}
+
+.onb-sheet{
+  position:relative;z-index:2;text-align:center;margin-top:auto;
+  padding:0 24px calc(30px + var(--safe-b));
+}
+.onb-sheet-handle{width:38px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 18px}
+.onb-title{font-size:21px;font-weight:800;margin-bottom:10px}
+.onb-desc{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:24px}
+.onb-cta{max-width:360px;margin:0 auto}
+
+@media(min-width:520px){
+  .onb-sheet{max-width:480px;margin-left:auto;margin-right:auto}
+}
+
 /* ===== LOGIN ===== */
 #login-screen{
   min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
