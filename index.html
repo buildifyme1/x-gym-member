@@ -60,7 +60,10 @@
 <div id="app">
   <div class="topbar">
     <div class="topbar-title">X GYM</div>
-    <button class="icon-btn" onclick="logout()"><i class="fas fa-arrow-right-from-bracket"></i></button>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="notif-btn"><i class="fas fa-bell"></i><span class="notif-dot"></span></button>
+      <button class="icon-btn" onclick="logout()"><i class="fas fa-arrow-right-from-bracket"></i></button>
+    </div>
   </div>
 
   <!-- الرئيسية -->
@@ -68,21 +71,64 @@
 
   <!-- الحضور -->
   <div class="tab-panel" id="attendance-panel-wrap">
-    <div style="padding:0 2px 10px;font-size:14px;font-weight:800">سجل الحضور</div>
+    <div class="att-page-header">
+      <div class="att-cal-badge"><i class="fas fa-calendar-days"></i></div>
+      <div class="att-page-title">سجل الحضور</div>
+      <button class="att-back-btn" onclick="switchToMain('home')"><i class="fas fa-chevron-left"></i></button>
+    </div>
+    <div class="att-summary-card">
+      <div class="att-summary-col">
+        <div class="att-summary-val" id="att-total-val">0</div>
+        <div class="att-summary-label">إجمالي مرات الحضور</div>
+      </div>
+      <div class="att-summary-divider"></div>
+      <div class="att-summary-col">
+        <div class="att-summary-val" id="att-month-val">0</div>
+        <div class="att-summary-label">هذا الشهر</div>
+      </div>
+    </div>
+    <div class="att-list-heading">سجل الحضور</div>
     <div id="attendance-panel"></div>
   </div>
 
   <!-- الباركود -->
   <div class="tab-panel" id="barcode-panel-wrap">
-    <div class="barcode-card">
-      <div class="gym-name">X GYM</div>
-      <div id="bc-name" style="font-size:14px;font-weight:700;color:#222"></div>
-      <div id="bc-sub" class="member-line"></div>
-      <svg id="member-barcode-svg" style="max-width:100%"></svg>
+    <div class="pass-card">
+      <div class="pass-header">
+        <div class="pass-logo"><span class="pass-logo-x">X</span><span class="pass-logo-gym">GYM</span></div>
+        <div class="pass-tagline">MEMBERSHIP PASS</div>
+      </div>
+      <div class="pass-photo-wrap" id="pass-photo-wrap"></div>
+      <div class="pass-name" id="pass-name"></div>
+      <div class="pass-id" id="pass-id"></div>
+
+      <div class="pass-barcode-card">
+        <svg id="member-barcode-svg" style="max-width:100%"></svg>
+      </div>
+
+      <div class="pass-status-row" id="pass-status-row"></div>
+
+      <div class="pass-expiry">
+        <div class="pass-expiry-label"><i class="fas fa-calendar-days"></i>تاريخ الانتهاء</div>
+        <div class="pass-expiry-val" id="pass-expiry-val"></div>
+      </div>
     </div>
+
+    <button class="btn btn-gold pass-show-btn" onclick="showFullBarcode()"><i class="fas fa-qrcode"></i> إظهار الكود</button>
+
     <div class="barcode-actions">
-      <button class="btn btn-gold" onclick="downloadBarcode()"><i class="fas fa-download"></i> تحميل</button>
+      <button class="btn btn-outline" onclick="downloadBarcode()"><i class="fas fa-download"></i> تحميل</button>
       <button class="btn btn-outline" onclick="printBarcode()"><i class="fas fa-print"></i> طباعة</button>
+    </div>
+  </div>
+
+  <!-- شاشة الباركود المكبّر -->
+  <div class="barcode-modal" id="barcode-modal">
+    <div class="barcode-modal-inner">
+      <div class="gym-name">X GYM</div>
+      <div id="bc-modal-sub" class="member-line"></div>
+      <svg id="member-barcode-svg-modal" style="max-width:100%"></svg>
+      <button class="btn btn-outline" onclick="closeFullBarcode()"><i class="fas fa-xmark"></i> إغلاق</button>
     </div>
   </div>
 </div>

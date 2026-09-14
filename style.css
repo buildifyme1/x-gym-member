@@ -96,51 +96,105 @@ button,input{font-family:inherit}
   padding:calc(16px + var(--safe-t)) 18px 10px;
 }
 .topbar-title{font-family:'Orbitron',monospace;font-weight:700;font-size:14px;color:var(--gold);letter-spacing:1.5px}
+.topbar-actions{display:flex;align-items:center;gap:10px}
 .icon-btn{
   width:44px;height:44px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
   color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;
+  position:relative;
+}
+.notif-dot{
+  position:absolute;top:9px;left:10px;width:8px;height:8px;border-radius:50%;
+  background:var(--red);border:2px solid var(--bg2);
+}
+
+/* ===== GREETING (home) ===== */
+.greet-wrap{padding:2px 2px 16px}
+.greet-hello{font-size:20px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:6px}
+.greet-wave{display:inline-block;animation:wave 1.8s ease-in-out infinite;transform-origin:70% 70%}
+@keyframes wave{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-8deg)}45%{transform:rotate(14deg)}60%{transform:rotate(-4deg)}75%{transform:rotate(10deg)}}
+.greet-sub{font-size:13px;color:var(--text3);margin-top:5px}
+
+/* ===== PROFILE CARD v2 (home) ===== */
+.profile-card{
+  background:linear-gradient(155deg,var(--bg3),var(--bg2));border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;margin-bottom:14px;
+  position:relative;overflow:hidden;text-align:right;
+}
+.profile-card::after{
+  content:'X';position:absolute;top:8px;left:14px;font-family:'Orbitron',monospace;
+  font-weight:900;font-size:46px;color:rgba(59,130,246,0.07);line-height:1;pointer-events:none;
+}
+.profile-top{display:flex;align-items:center;gap:14px}
+.profile-photo-wrap{
+  width:64px;height:64px;border-radius:50%;position:relative;flex-shrink:0;
+  background:var(--bg4);border:3px solid var(--gold);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--gold3);
+}
+.profile-photo-wrap img{width:100%;height:100%;object-fit:cover}
+.photo-upload-btn{
+  position:absolute;bottom:-2px;left:-2px;
+  width:26px;height:26px;border-radius:50%;background:var(--gold);border:2px solid var(--bg2);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;z-index:2;
+}
+.profile-info{flex:1;min-width:0}
+.profile-name{font-size:17px;font-weight:800;margin-bottom:2px}
+.profile-id{font-size:12px;color:var(--text3);margin-bottom:8px;letter-spacing:.5px}
+.status-dot-row{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green)}
+.status-dot-row .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,0.15)}
+.status-dot-row.status-expired{color:var(--red)}
+.status-dot-row.status-expired .dot{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,0.15)}
+.status-dot-row.status-frozen{color:var(--gold3)}
+.status-dot-row.status-frozen .dot{background:var(--gold3);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+.status-dot-row.status-pending{color:var(--amber)}
+.status-dot-row.status-pending .dot{background:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,0.15)}
+
+.profile-divider{height:1px;background:var(--border);margin:16px 0 14px}
+.days-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:relative;z-index:1}
+.days-col .days-label,.end-col .end-label{font-size:11px;color:var(--text3);font-weight:700;margin-bottom:6px}
+.end-col .end-label{display:flex;align-items:center;gap:5px;justify-content:flex-start}
+.days-col .days-num{font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:var(--gold3);line-height:1;display:flex;align-items:baseline;gap:5px}
+.days-col .days-num .days-unit{font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text3)}
+.end-col{text-align:left}
+.end-col .end-val{font-size:14px;font-weight:800;color:var(--text)}
+.progress-track{height:6px;background:var(--bg4);border-radius:99px;overflow:hidden;margin-top:14px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold3));border-radius:99px;transition:width .4s}
+.days-fraction{text-align:left;font-size:11px;color:var(--text3);margin-top:6px;font-weight:700}
+
+/* ===== STAT GRID v2 (home) ===== */
+.stat-grid .stat-card{position:relative;text-align:right;padding:14px}
+.stat-icon{
+  width:34px;height:34px;border-radius:10px;background:rgba(59,130,246,0.14);color:var(--gold3);
+  display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px;
+}
+.stat-icon.stat-icon-gold{background:rgba(245,158,11,0.16);color:var(--amber)}
+.stat-grid .stat-val{font-size:16px}
+.stat-val.stat-val-gold{color:var(--amber)}
+
+/* ===== ACTIVITY SECTION (home) ===== */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 10px}
+.section-title{font-size:14px;font-weight:800}
+.see-all{font-size:12px;color:var(--gold3);font-weight:700;cursor:pointer}
+.activity-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.activity-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 8px;text-align:center;
+}
+.activity-icon{
+  width:32px;height:32px;border-radius:9px;background:rgba(59,130,246,0.14);color:var(--gold3);
+  display:flex;align-items:center;justify-content:center;font-size:13px;margin:0 auto 8px;
+}
+.activity-date{font-size:11px;font-weight:800;color:var(--text)}
+.activity-time{font-size:10px;color:var(--text3);margin-top:2px}
+.activity-tag{
+  display:inline-block;margin-top:8px;font-size:10px;font-weight:800;color:var(--green);
+  background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);border-radius:99px;padding:3px 10px;
 }
 
 .tab-panel{display:none;padding:6px 16px 8px;animation:fadeIn .25s ease}
 .tab-panel.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ===== PROFILE CARD ===== */
-.profile-card{
-  background:linear-gradient(155deg,var(--bg3),var(--bg2));border:1px solid var(--border);
-  border-radius:var(--radius);padding:22px 18px;text-align:center;margin-bottom:14px;
-  position:relative;overflow:hidden;
-}
-.photo-outer{width:88px;margin:0 auto 12px;position:relative}
-.profile-photo-wrap{
-  width:88px;height:88px;border-radius:50%;position:relative;
-  background:var(--bg4);border:3px solid var(--gold);overflow:hidden;
-  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--gold3);
-}
-.profile-photo-wrap img{width:100%;height:100%;object-fit:cover}
-.photo-upload-btn{
-  position:absolute;bottom:-4px;left:50%;transform:translateX(26px);
-  width:34px;height:34px;border-radius:50%;background:var(--gold);border:2px solid var(--bg2);
-  color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;z-index:2;
-}
-.profile-name{font-size:18px;font-weight:800;margin-bottom:2px}
-.profile-id{font-size:12px;color:var(--text3);margin-bottom:14px;letter-spacing:.5px}
-.status-pill{
-  display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
-  font-size:12px;font-weight:800;
-}
-.status-active{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
-.status-expired{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
-.status-frozen{background:rgba(59,130,246,0.12);color:var(--gold3);border:1px solid rgba(59,130,246,0.3)}
-.status-pending{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
-
-.days-remaining{margin-top:16px}
-.days-num{font-family:'Orbitron',monospace;font-size:34px;font-weight:900;color:var(--gold3);line-height:1}
-.days-label{font-size:11px;color:var(--text3);margin-top:4px}
-.progress-track{height:6px;background:var(--bg4);border-radius:99px;overflow:hidden;margin-top:12px}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold3));border-radius:99px;transition:width .4s}
-
-/* ===== GRID / STAT CARDS ===== */
+/* ===== GRID / STAT CARDS (base) ===== */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat-card{
   background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
@@ -149,15 +203,6 @@ button,input{font-family:inherit}
 .stat-val{font-size:19px;font-weight:800;color:var(--text)}
 .stat-label{font-size:11px;color:var(--text3);margin-top:3px}
 
-.info-card{
-  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
-  padding:16px 18px;margin-bottom:14px;
-}
-.info-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
-.info-row:last-child{border-bottom:none}
-.info-row-label{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px}
-.info-row-val{font-size:13px;font-weight:700}
-
 /* ===== BARCODE CARD ===== */
 .barcode-card{background:#fff;border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:14px}
 .barcode-card .gym-name{font-family:'Orbitron',monospace;font-weight:900;font-size:17px;color:#111;margin-bottom:2px}
@@ -165,17 +210,109 @@ button,input{font-family:inherit}
 .barcode-actions{display:flex;gap:8px;margin-top:2px}
 .barcode-actions .btn{padding:10px;font-size:12px}
 
+/* ===== MEMBERSHIP PASS ===== */
+.pass-card{
+  position:relative;overflow:hidden;text-align:center;
+  background:linear-gradient(165deg,var(--bg3),var(--bg2));
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px 20px 22px;margin-bottom:16px;
+}
+.pass-card::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 85% -10%,rgba(59,130,246,0.22) 0%,transparent 55%),
+             radial-gradient(ellipse at -10% 110%,rgba(37,99,235,0.14) 0%,transparent 50%);
+}
+.pass-card::after{
+  content:'X';position:absolute;top:-6px;left:6px;font-family:'Orbitron',monospace;
+  font-weight:900;font-size:70px;color:rgba(59,130,246,0.06);line-height:1;pointer-events:none;
+}
+.pass-header{position:relative;z-index:1;margin-bottom:18px}
+.pass-logo{font-family:'Orbitron',monospace;font-weight:900;font-size:24px}
+.pass-logo-x{background:linear-gradient(135deg,var(--gold3),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pass-logo-gym{color:var(--text);margin-right:5px;letter-spacing:1px}
+.pass-tagline{margin-top:4px;font-size:10px;letter-spacing:3px;color:var(--gold3);font-weight:700}
+.pass-photo-wrap{
+  position:relative;z-index:1;width:84px;height:84px;border-radius:50%;margin:0 auto 14px;
+  background:var(--bg4);border:3px solid var(--gold);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--gold3);
+}
+.pass-photo-wrap img{width:100%;height:100%;object-fit:cover}
+.pass-name{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--text)}
+.pass-id{position:relative;z-index:1;font-size:12px;color:var(--text3);margin-top:3px;letter-spacing:1px}
+.pass-barcode-card{
+  position:relative;z-index:1;background:#fff;border-radius:14px;padding:14px 12px 6px;
+  margin-top:18px;text-align:center;
+}
+.pass-status-row{position:relative;z-index:1;margin-top:16px;display:flex;justify-content:center}
+.pass-status-pill{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  padding:8px 18px;border-radius:99px;background:rgba(34,197,94,0.1);
+  border:1px solid rgba(34,197,94,0.3);color:var(--green);
+}
+.pass-status-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.pass-status-pill.status-expired{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--red)}
+.pass-status-pill.status-frozen{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:var(--gold3)}
+.pass-status-pill.status-pending{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:var(--amber)}
+.pass-expiry{position:relative;z-index:1;margin-top:16px}
+.pass-expiry-label{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:12px;color:var(--text3);font-weight:700;
+}
+.pass-expiry-val{font-size:15px;font-weight:800;color:var(--text);margin-top:5px}
+.pass-show-btn{margin-bottom:10px}
+
+/* ===== FULLSCREEN BARCODE MODAL ===== */
+.barcode-modal{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(6,10,18,0.88);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:24px;
+}
+.barcode-modal.show{display:flex}
+.barcode-modal-inner{
+  background:#fff;border-radius:var(--radius);padding:26px 22px 20px;
+  width:100%;max-width:320px;text-align:center;
+}
+.barcode-modal-inner #member-barcode-svg-modal{max-width:100%;margin-top:6px}
+.barcode-modal-inner .btn-outline{margin-top:18px;border-color:#ddd;color:#333}
+
+/* ===== ATTENDANCE PAGE HEADER ===== */
+.att-page-header{display:flex;align-items:center;justify-content:space-between;padding:calc(4px + var(--safe-t)) 2px 16px}
+.att-cal-badge{
+  width:38px;height:38px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--gold3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+}
+.att-page-title{flex:1;text-align:center;font-size:16px;font-weight:800;color:var(--text)}
+.att-back-btn{
+  width:38px;height:38px;border-radius:12px;background:none;border:none;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;
+}
+
+/* ===== ATTENDANCE SUMMARY ===== */
+.att-summary-card{
+  display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 10px;margin-bottom:18px;
+}
+.att-summary-col{flex:1;text-align:center}
+.att-summary-val{font-family:'Orbitron',monospace;font-weight:900;font-size:24px;color:var(--text)}
+.att-summary-label{font-size:11px;color:var(--text3);margin-top:6px;font-weight:700}
+.att-summary-divider{width:1px;align-self:stretch;background:var(--border)}
+
+.att-list-heading{font-size:14px;font-weight:800;margin:2px 2px 10px}
+
 /* ===== ATTENDANCE LIST ===== */
-.att-item{
-  display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;
+.att-item-v2{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;
 }
-.att-icon{
-  width:38px;height:38px;border-radius:11px;background:rgba(37,99,235,0.12);color:var(--gold3);
-  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+.att-pill{
+  background:rgba(34,197,94,0.14);border:1px solid rgba(34,197,94,0.3);color:var(--green);
+  font-size:12px;font-weight:800;padding:7px 18px;border-radius:99px;flex-shrink:0;
 }
-.att-date{font-size:13px;font-weight:700}
-.att-time{font-size:11px;color:var(--text3)}
+.att-item-info{flex:1;text-align:center}
+.att-item-time{font-size:14px;font-weight:800;color:var(--text)}
+.att-item-date{font-size:11px;color:var(--text3);margin-top:3px}
+.att-item-cal{color:var(--text3);font-size:15px;opacity:.55;flex-shrink:0}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
 .empty-state i{font-size:32px;margin-bottom:10px;opacity:.5;display:block}
 

@@ -23,6 +23,7 @@ let _attSub = null, _memSub = null;
 
 const STATUS_LABELS = { active:'نشط', expired:'منتهي', frozen:'مجمد', pending:'معلّق' };
 const STATUS_ICONS  = { active:'fa-circle-check', expired:'fa-circle-xmark', frozen:'fa-lock', pending:'fa-clock' };
+const STATUS_DOT_LABELS = { active:'عضويتك فعالة', expired:'عضويتك منتهية', frozen:'عضويتك مجمّدة', pending:'عضويتك معلّقة' };
 
 function memberAuthEmail(id){
   return id.trim().toLowerCase().replace(/[^a-z0-9]/g,'') + '@xgym-members.app';
@@ -193,43 +194,107 @@ function renderHome(){
 
   const totalAttendance = attendanceRows.length;
   const lastAtt = attendanceRows[0];
+  const recentAtt = attendanceRows.slice(0, 3);
+  const firstName = (m.name||'').trim().split(' ')[0] || '';
 
   document.getElementById('home-panel').innerHTML = `
+    <div class="greet-wrap">
+      <div class="greet-hello">أهلاً، ${m.name||''} <span class="greet-wave">👋</span></div>
+      <div class="greet-sub">جاهز تتمرن النهارده؟</div>
+    </div>
+
     <div class="profile-card">
-      <div class="photo-outer">
+      <div class="profile-top">
         <div class="profile-photo-wrap" id="photo-wrap">
           ${m.photo_url ? `<img src="${m.photo_url}">` : (m.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2)}
+          <label class="photo-upload-btn" for="photo-input"><i class="fas fa-camera"></i></label>
         </div>
-        <label class="photo-upload-btn" for="photo-input"><i class="fas fa-camera"></i></label>
+        <div class="profile-info">
+          <div class="profile-name">${m.name||''}</div>
+          <div class="profile-id">${currentRowId}</div>
+          <div class="status-dot-row status-${status}"><span class="dot"></span>${STATUS_DOT_LABELS[status]}</div>
+        </div>
       </div>
       <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
-      <div class="profile-name">${m.name||''}</div>
-      <div class="profile-id">${currentRowId} ${priceNames[m.type]?' · '+priceNames[m.type]:''}</div>
-      <span class="status-pill status-${status}"><i class="fas ${STATUS_ICONS[status]}"></i> ${STATUS_LABELS[status]}</span>
-      <div class="days-remaining">
-        <div class="days-num">${status==='expired' ? 0 : dRem}</div>
-        <div class="days-label">يوم متبقي في الاشتراك</div>
-        <div class="progress-track"><div class="progress-fill" style="width:${status==='expired'?100:pct}%"></div></div>
+
+      <div class="profile-divider"></div>
+      <div class="days-row">
+        <div class="days-col">
+          <div class="days-label">الأيام المتبقية</div>
+          <div class="days-num">${status==='expired' ? 0 : dRem}<span class="days-unit">يوم</span></div>
+        </div>
+        <div class="end-col">
+          <div class="end-label"><i class="fas fa-calendar-days"></i>تاريخ الانتهاء</div>
+          <div class="end-val">${m.end ? formatEndDate(m.end) : '—'}</div>
+        </div>
       </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${status==='expired'?100:pct}%"></div></div>
+      ${totalDays ? `<div class="days-fraction">${status==='expired' ? totalDays : dRem} / ${totalDays}</div>` : ''}
     </div>
 
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val">${totalAttendance}</div><div class="stat-label">إجمالي الحضور</div></div>
-      <div class="stat-card"><div class="stat-val">${lastAtt ? formatDate(lastAtt.time) : '—'}</div><div class="stat-label">آخر حضور</div></div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-dumbbell"></i></div>
+        <div class="stat-val">${totalAttendance}</div>
+        <div class="stat-label">إجمالي مرات الحضور</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-val">${lastAtt ? formatRelativeAttendance(lastAtt.time) : '—'}</div>
+        <div class="stat-label">آخر حضور</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="stat-val">${status==='expired' ? 0 : dRem} يوم</div>
+        <div class="stat-label">الأيام المتبقية</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-gold"><i class="fas fa-crown"></i></div>
+        <div class="stat-val stat-val-gold">${STATUS_LABELS[status]}</div>
+        <div class="stat-label">حالة الاشتراك</div>
+      </div>
     </div>
 
-    <div class="info-card">
-      <div class="info-row"><span class="info-row-label"><i class="fas fa-id-card"></i>رقم العضوية</span><span class="info-row-val">${currentRowId}</span></div>
-      <div class="info-row"><span class="info-row-label"><i class="fas fa-tag"></i>نوع الاشتراك</span><span class="info-row-val">${priceNames[m.type]||m.type||'—'}</span></div>
-      <div class="info-row"><span class="info-row-label"><i class="fas fa-calendar-check"></i>بداية الاشتراك</span><span class="info-row-val">${m.start||'—'}</span></div>
-      <div class="info-row"><span class="info-row-label"><i class="fas fa-calendar-xmark"></i>نهاية الاشتراك</span><span class="info-row-val">${m.end||'—'}</span></div>
+    <div class="section-head">
+      <div class="section-title">آخر النشاط</div>
+      <div class="see-all" onclick="switchToMain('attendance')">عرض الكل</div>
     </div>
+    ${recentAtt.length ? `
+    <div class="activity-row">
+      ${recentAtt.map(a => `
+        <div class="activity-card">
+          <div class="activity-icon"><i class="fas fa-calendar-day"></i></div>
+          <div class="activity-date">${formatActivityDate(a.time)}</div>
+          <div class="activity-time">${formatActivityTime(a.time)}</div>
+          <div class="activity-tag">حضور</div>
+        </div>
+      `).join('')}
+    </div>` : `<div class="empty-state"><i class="fas fa-calendar-xmark"></i>لا يوجد سجل حضور حتى الآن</div>`}
   `;
 }
 
 function formatDate(iso){
   const d = new Date(iso);
   return d.toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit' }) + ' · ' + d.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+}
+function formatEndDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function formatActivityDate(iso){
+  return new Date(iso).toLocaleDateString('en-CA').replace(/-/g,'/');
+}
+function formatActivityTime(iso){
+  return new Date(iso).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+}
+function formatRelativeAttendance(iso){
+  const d = new Date(iso);
+  const now = new Date();
+  const time = formatActivityTime(iso);
+  if(d.toDateString() === now.toDateString()) return 'اليوم ' + time;
+  const y = new Date(now); y.setDate(now.getDate()-1);
+  if(d.toDateString() === y.toDateString()) return 'أمس ' + time;
+  return formatActivityDate(iso);
 }
 
 // ===================== رفع صورة البروفايل =====================
@@ -278,32 +343,70 @@ function resizeImage(file, maxSize){
 // ===================== الحضور =====================
 function renderAttendance(){
   const wrap = document.getElementById('attendance-panel');
+
+  const now = new Date();
+  const monthCount = attendanceRows.filter(a=>{
+    const d = new Date(a.time);
+    return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  }).length;
+  const totalEl = document.getElementById('att-total-val');
+  const monthEl = document.getElementById('att-month-val');
+  if(totalEl) totalEl.textContent = attendanceRows.length;
+  if(monthEl) monthEl.textContent = monthCount;
+
   if(!attendanceRows.length){
     wrap.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-xmark"></i>لا يوجد سجل حضور حتى الآن</div>`;
     return;
   }
   wrap.innerHTML = attendanceRows.map(a => `
-    <div class="att-item">
-      <div class="att-icon"><i class="fas fa-right-to-bracket"></i></div>
-      <div>
-        <div class="att-date">${new Date(a.time).toLocaleDateString('ar-EG',{weekday:'long',day:'2-digit',month:'2-digit'})}</div>
-        <div class="att-time">${new Date(a.time).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}${a.session?' · '+a.session:''}</div>
+    <div class="att-item-v2">
+      <div class="att-pill">حضور</div>
+      <div class="att-item-info">
+        <div class="att-item-time">${formatActivityTime(a.time)}</div>
+        <div class="att-item-date">${formatActivityDate(a.time)}</div>
       </div>
+      <div class="att-item-cal"><i class="fas fa-calendar-days"></i></div>
     </div>
   `).join('');
 }
 
 // ===================== الباركود =====================
 function renderBarcode(){
-  const code = currentMember.barcode || currentRowId;
-  document.getElementById('bc-name').textContent = currentMember.name || '';
-  document.getElementById('bc-sub').textContent = (priceNames[currentMember.type]||currentMember.type||'') + ' | ' + currentRowId;
+  const m = currentMember;
+  const status = computedStatus();
+  const code = m.barcode || currentRowId;
+  const subLine = (priceNames[m.type]||m.type||'') + ' | ' + currentRowId;
+
+  document.getElementById('pass-photo-wrap').innerHTML = m.photo_url
+    ? `<img src="${m.photo_url}">`
+    : (m.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2);
+  document.getElementById('pass-name').textContent = m.name || '';
+  document.getElementById('pass-id').textContent = currentRowId;
+  document.getElementById('pass-status-row').innerHTML =
+    `<div class="pass-status-pill status-${status}"><span class="dot"></span>${STATUS_DOT_LABELS[status]}</div>`;
+  document.getElementById('pass-expiry-val').textContent = m.end ? formatEndDate(m.end) : '—';
+  document.getElementById('bc-modal-sub').textContent = subLine;
+
   try{
     JsBarcode('#member-barcode-svg', code, {
-      format:'CODE128', width:2.2, height:80, displayValue:true,
+      format:'CODE128', width:2.2, height:70, displayValue:true,
       font:'Arial', fontSize:13, margin:6, background:'#ffffff', lineColor:'#000000'
     });
   }catch(e){ console.warn('barcode render error', e); }
+}
+
+function showFullBarcode(){
+  const code = currentMember.barcode || currentRowId;
+  try{
+    JsBarcode('#member-barcode-svg-modal', code, {
+      format:'CODE128', width:2.6, height:110, displayValue:true,
+      font:'Arial', fontSize:15, margin:8, background:'#ffffff', lineColor:'#000000'
+    });
+  }catch(e){ console.warn('barcode render error', e); }
+  document.getElementById('barcode-modal').classList.add('show');
+}
+function closeFullBarcode(){
+  document.getElementById('barcode-modal').classList.remove('show');
 }
 
 function getBarcodeDataURL(){
