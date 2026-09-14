@@ -90,7 +90,7 @@ button,input{font-family:inherit}
 }
 
 /* ===== APP SHELL ===== */
-#app{display:none;min-height:100vh;min-height:100dvh;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 14px);position:relative;z-index:1}
+#app{display:none;min-height:100vh;min-height:100dvh;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 28px);position:relative;z-index:1}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:calc(16px + var(--safe-t)) 18px 10px;
@@ -106,6 +106,60 @@ button,input{font-family:inherit}
   position:absolute;top:9px;left:10px;width:8px;height:8px;border-radius:50%;
   background:var(--red);border:2px solid var(--bg2);
 }
+
+/* ===== NOTIFICATIONS PANEL ===== */
+.notif-wrap{position:relative}
+.notif-panel{
+  display:none;position:absolute;top:calc(100% + 10px);left:0;z-index:120;
+  width:280px;max-width:78vw;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);box-shadow:0 12px 30px rgba(0,0,0,0.45);overflow:hidden;
+}
+.notif-panel.show{display:block;animation:fadeIn .18s ease}
+.notif-panel-head{padding:12px 14px;font-size:13px;font-weight:800;color:var(--text);border-bottom:1px solid var(--border)}
+.notif-list{max-height:280px;overflow-y:auto}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.notif-item:last-child{border-bottom:none}
+.notif-item i{color:var(--gold3);font-size:14px;margin-top:2px;flex-shrink:0}
+.notif-text{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ===== HOME HERO ===== */
+.home-hero{
+  position:relative;border-radius:var(--radius);overflow:hidden;height:170px;margin-bottom:18px;
+  background:var(--bg3);
+}
+.home-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.home-hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(6,10,18,0.85) 30%,rgba(6,10,18,0.25) 100%);
+}
+.home-hero-text{
+  position:absolute;top:50%;right:18px;transform:translateY(-50%);
+  font-size:19px;font-weight:800;color:var(--text);line-height:1.5;text-align:right;
+}
+.home-hero-text span{color:var(--gold3)}
+
+/* ===== FEATURES GRID (home) ===== */
+.features-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.feature-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
+}
+.feature-icon-circle{
+  width:44px;height:44px;border-radius:50%;background:rgba(59,130,246,0.14);color:var(--gold3);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.feature-label{font-size:13px;font-weight:700;color:var(--text2)}
+
+/* ===== JOURNEY / PROMO CARD (home) ===== */
+.journey-card{
+  display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px;margin-bottom:14px;cursor:pointer;
+}
+.journey-img{width:64px;height:64px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
+.journey-text{flex:1;min-width:0;text-align:right}
+.journey-title{font-size:14px;font-weight:800;color:var(--text)}
+.journey-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.journey-arrow{color:var(--text3);font-size:14px;flex-shrink:0}
 
 /* ===== GREETING (home) ===== */
 .greet-wrap{padding:2px 2px 16px}
@@ -259,7 +313,9 @@ button,input{font-family:inherit}
   font-size:12px;color:var(--text3);font-weight:700;
 }
 .pass-expiry-val{font-size:15px;font-weight:800;color:var(--text);margin-top:5px}
-.pass-show-btn{margin-bottom:10px}
+.pass-show-btn{margin-bottom:12px}
+#barcode-panel-wrap{padding-bottom:calc(var(--safe-b) + 12px)}
+.barcode-actions{margin-bottom:6px}
 
 /* ===== FULLSCREEN BARCODE MODAL ===== */
 .barcode-modal{
@@ -348,4 +404,14 @@ button,input{font-family:inherit}
 @media(min-width:520px){
   #login-screen,.tab-panel{max-width:480px;margin:0 auto}
   .bottom-nav{max-width:480px;left:50%;right:auto;transform:translateX(-50%);border-radius:20px 20px 0 0}
+}
+
+/* ===== SHORT-SCREEN COMPACTING (pass tab) ===== */
+@media(max-height:700px){
+  .pass-card{padding:18px 18px 16px}
+  .pass-header{margin-bottom:12px}
+  .pass-photo-wrap{width:68px;height:68px;margin-bottom:10px}
+  .pass-barcode-card{padding:10px 10px 4px;margin-top:14px}
+  .pass-status-row{margin-top:12px}
+  .pass-expiry{margin-top:12px}
 }

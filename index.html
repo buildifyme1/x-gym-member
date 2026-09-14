@@ -61,7 +61,13 @@
   <div class="topbar">
     <div class="topbar-title">X GYM</div>
     <div class="topbar-actions">
-      <button class="icon-btn" id="notif-btn"><i class="fas fa-bell"></i><span class="notif-dot"></span></button>
+      <div class="notif-wrap">
+        <button class="icon-btn" id="notif-btn" onclick="toggleNotifications()"><i class="fas fa-bell"></i><span class="notif-dot" id="notif-dot"></span></button>
+        <div class="notif-panel" id="notif-panel">
+          <div class="notif-panel-head">الإشعارات</div>
+          <div class="notif-list" id="notif-list"></div>
+        </div>
+      </div>
       <button class="icon-btn" onclick="logout()"><i class="fas fa-arrow-right-from-bracket"></i></button>
     </div>
   </div>
