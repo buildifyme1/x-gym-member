@@ -5,7 +5,7 @@
 // الحضور) بتفضل محتاجة اتصال بالإنترنت لأنها بتيجي من Supabase
 // لحظيًا — الكاش هنا بس لواجهة التطبيق نفسها.
 // ============================================================
-const CACHE_NAME = 'xgym-member-v5';
+const CACHE_NAME = 'xgym-member-v6';
 
 // ملفات نفس الدومين (أساسية — لازم تتخزن)
 const CORE_ASSETS = [
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   './index.html',
   './style.css',
   './script.js',
+  './training-data.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -57,6 +58,24 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const isSupabase = url.hostname.includes('supabase.co');
   if (isSupabase) return; // سيبها تروح للشبكة عادي، من غير تدخل من الكاش
+
+  // الفيديوهات ويوتيوب/فيميو: مالهاش كاش (كبيرة الحجم ومش لازم تتخزن)
+  const isMedia = req.destination === 'video' || req.destination === 'audio' || req.headers.has('range') ||
+                  /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(url.pathname) ||
+                  /(youtube|youtube-nocookie|ytimg|googlevideo|vimeo|vimeocdn)\./.test(url.hostname);
+  if (isMedia) return;
+
+  // ملف الفيديوهات: الشبكة أولاً (عشان أي فيديو جديد تضيفه يظهر فورًا)، والكاش لو مفيش نت
+  if (url.origin === self.location.origin && url.pathname.endsWith('/training-data.js')) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then((cached) => {

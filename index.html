@@ -98,6 +98,16 @@
     <div id="attendance-panel"></div>
   </div>
 
+  <!-- أنظمة التدريب -->
+  <div class="tab-panel" id="training-panel-wrap">
+    <div class="att-page-header">
+      <div class="att-cal-badge"><i class="fas fa-dumbbell"></i></div>
+      <div class="att-page-title" id="training-title">أنظمة التدريب</div>
+      <button class="att-back-btn" onclick="trainingBack()"><i class="fas fa-chevron-left"></i></button>
+    </div>
+    <div id="training-panel"></div>
+  </div>
+
   <!-- الباركود -->
   <div class="tab-panel" id="barcode-panel-wrap">
     <div class="pass-card">
@@ -138,12 +148,25 @@
       <button class="btn btn-outline" onclick="closeFullBarcode()"><i class="fas fa-xmark"></i> إغلاق</button>
     </div>
   </div>
+
+  <!-- مشغّل الفيديو -->
+  <div class="video-modal" id="video-modal" onclick="if(event.target===this)closeTrainingVideo()">
+    <div class="video-modal-inner">
+      <button class="video-close" onclick="closeTrainingVideo()"><i class="fas fa-xmark"></i></button>
+      <div class="video-frame" id="video-frame"></div>
+      <div class="video-meta">
+        <div class="video-meta-title" id="video-meta-title"></div>
+        <div class="video-meta-note" id="video-meta-note"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== شريط التنقل السفلي ===== -->
 <div class="bottom-nav" id="bottom-nav" style="display:none">
   <button class="nav-btn active" id="nav-home" onclick="switchToMain('home')"><i class="fas fa-house"></i>الرئيسية</button>
   <button class="nav-btn" id="nav-attendance" onclick="switchToMain('attendance')"><i class="fas fa-calendar-check"></i>الحضور</button>
+  <button class="nav-btn" id="nav-training" onclick="switchToMain('training')"><i class="fas fa-dumbbell"></i>التدريب</button>
   <button class="nav-btn" id="nav-barcode" onclick="switchToMain('barcode')"><i class="fas fa-barcode"></i>الباركود</button>
 </div>
 
@@ -158,6 +181,7 @@
 
 <div id="toast"></div>
 
+<script src="training-data.js"></script>
 <script src="script.js"></script>
 <script>
 // إظهار شريط التنقل بعد الدخول + دعم التبويبات الثلاثة (الرئيسية/الحضور/الباركود)

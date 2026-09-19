@@ -98,6 +98,8 @@ function logout(){
   currentMember = null; currentRowId = null; currentUserId = null;
   document.getElementById('app').style.display = 'none';
   const _nav = document.getElementById('bottom-nav'); if(_nav) _nav.style.display = 'none';
+  if(typeof closeTrainingVideo === 'function') closeTrainingVideo();
+  _trSystem = null; if(typeof renderTraining === 'function') renderTraining();
   if(typeof switchToMain === 'function') switchToMain('home');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-id').value = '';
@@ -607,11 +609,126 @@ function initNotifications(){
   }catch(e){ console.warn('initNotifications error', e); }
 }
 
+// ===================== أنظمة التدريب =====================
+// البيانات في ملف training-data.js (TRAINING_SYSTEMS)
+let _trSystem = null;   // null = قائمة الأنظمة، غير كده = index النظام المفتوح
+
+function esc(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ytId(url){
+  const m = (url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+function vimeoId(url){
+  const m = (url||'').match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return m ? m[1] : null;
+}
+function isFileVideo(url){ return /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(url||''); }
+function videoThumb(v){
+  if(v.thumb) return v.thumb;
+  const id = ytId(v.url);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '';
+}
+function trainingSystems(){
+  return (typeof TRAINING_SYSTEMS !== 'undefined' && Array.isArray(TRAINING_SYSTEMS)) ? TRAINING_SYSTEMS : [];
+}
+
+function renderTraining(){
+  const wrap = document.getElementById('training-panel');
+  const titleEl = document.getElementById('training-title');
+  if(!wrap) return;
+  const systems = trainingSystems();
+
+  // ---- قائمة الأنظمة ----
+  if(_trSystem === null || !systems[_trSystem]){
+    _trSystem = null;
+    if(titleEl) titleEl.textContent = 'أنظمة التدريب';
+    if(!systems.length){
+      wrap.innerHTML = `<div class="empty-state"><i class="fas fa-dumbbell"></i>لا توجد أنظمة تدريب حتى الآن</div>`;
+      return;
+    }
+    wrap.innerHTML = systems.map((s, i) => {
+      const n = (s.videos || []).length;
+      return `
+      <div class="tr-card" onclick="openTrainingSystem(${i})">
+        <div class="tr-card-ico"><i class="fas ${esc(s.icon || 'fa-dumbbell')}"></i></div>
+        <div class="tr-card-info">
+          <div class="tr-card-title">${esc(s.title)}</div>
+          ${s.subtitle ? `<div class="tr-card-sub">${esc(s.subtitle)}</div>` : ''}
+          <div class="tr-chips">
+            ${s.level ? `<span class="tr-chip">${esc(s.level)}</span>` : ''}
+            <span class="tr-chip tr-chip-dim"><i class="fas fa-circle-play"></i> ${n} فيديو</span>
+          </div>
+        </div>
+        <div class="tr-card-arrow"><i class="fas fa-chevron-left"></i></div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // ---- تفاصيل نظام + فيديوهاته ----
+  const s = systems[_trSystem];
+  const videos = s.videos || [];
+  if(titleEl) titleEl.textContent = s.title;
+  wrap.innerHTML = `
+    ${s.description ? `<div class="tr-hero">${esc(s.description)}</div>` : ''}
+    <div class="att-list-heading">الفيديوهات (${videos.length})</div>
+    ${videos.length ? videos.map((v, j) => {
+      const th = videoThumb(v);
+      return `
+      <div class="tr-video" onclick="playTrainingVideo(${_trSystem}, ${j})">
+        <div class="tr-thumb"${th ? ` style="background-image:url('${esc(th)}')"` : ''}>
+          <span class="tr-play"><i class="fas fa-play"></i></span>
+          ${v.duration ? `<span class="tr-dur">${esc(v.duration)}</span>` : ''}
+        </div>
+        <div class="tr-vinfo">
+          <div class="tr-vtitle">${esc(v.title || ('فيديو ' + (j + 1)))}</div>
+          ${v.note ? `<div class="tr-vnote">${esc(v.note)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty-state"><i class="fas fa-video-slash"></i>لم تتم إضافة فيديوهات لهذا النظام بعد</div>`}
+  `;
+}
+
+function openTrainingSystem(i){ _trSystem = i; renderTraining(); window.scrollTo(0, 0); }
+function trainingBack(){
+  if(_trSystem !== null){ _trSystem = null; renderTraining(); window.scrollTo(0, 0); }
+  else if(typeof switchToMain === 'function') switchToMain('home');
+}
+
+function playTrainingVideo(si, vi){
+  const v = ((trainingSystems()[si] || {}).videos || [])[vi];
+  if(!v || !v.url) return;
+  const yt = ytId(v.url), vm = vimeoId(v.url);
+  let html = '';
+  if(yt){
+    html = `<iframe src="https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0&playsinline=1&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+  } else if(vm){
+    html = `<iframe src="https://player.vimeo.com/video/${vm}?autoplay=1" allow="autoplay; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+  } else if(isFileVideo(v.url)){
+    html = `<video src="${esc(v.url)}" controls autoplay playsinline preload="metadata"></video>`;
+  } else {
+    window.open(v.url, '_blank', 'noopener');   // أي رابط تاني يتفتح في تاب جديد
+    return;
+  }
+  document.getElementById('video-frame').innerHTML = html;
+  document.getElementById('video-meta-title').textContent = v.title || '';
+  document.getElementById('video-meta-note').textContent = v.note || '';
+  document.getElementById('video-modal').classList.add('show');
+}
+function closeTrainingVideo(){
+  document.getElementById('video-modal').classList.remove('show');
+  document.getElementById('video-frame').innerHTML = '';   // يوقف الفيديو
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTrainingVideo(); });
+
 // ===================== بدء التشغيل =====================
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-btn').addEventListener('click', doLogin);
   document.getElementById('login-pin').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.getElementById('login-id').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('login-pin').focus(); });
+  renderTraining();
   tryRestoreSession();
 });
 
