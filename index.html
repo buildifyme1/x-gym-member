@@ -51,6 +51,7 @@
         <div class="field-icon-el"><i class="fas fa-mobile-screen"></i></div>
       </div>
       <button class="btn btn-gold" id="login-btn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
+      <button class="btn btn-install" id="install-btn" type="button" style="display:none"><i class="fas fa-download"></i> تحميل التطبيق على موبايلك</button>
       <div class="login-hint">استخدم رقم العضوية ورقم الموبايل المسجّل عندنا للدخول</div>
     </div>
   </div>
@@ -144,6 +145,15 @@
   <button class="nav-btn active" id="nav-home" onclick="switchToMain('home')"><i class="fas fa-house"></i>الرئيسية</button>
   <button class="nav-btn" id="nav-attendance" onclick="switchToMain('attendance')"><i class="fas fa-calendar-check"></i>الحضور</button>
   <button class="nav-btn" id="nav-barcode" onclick="switchToMain('barcode')"><i class="fas fa-barcode"></i>الباركود</button>
+</div>
+
+<!-- ===== شرح تثبيت التطبيق (iPhone / متصفحات بدون تثبيت مباشر) ===== -->
+<div class="install-modal" id="install-modal">
+  <div class="install-modal-inner">
+    <div class="install-modal-title"><i class="fas fa-mobile-screen-button"></i> تثبيت X GYM كتطبيق</div>
+    <ol class="install-steps" id="install-steps"></ol>
+    <button class="btn btn-gold" type="button" onclick="closeInstallModal()">تمام</button>
+  </div>
 </div>
 
 <div id="toast"></div>

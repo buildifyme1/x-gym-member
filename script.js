@@ -372,41 +372,15 @@ function renderAttendance(){
 
 // ===================== الباركود =====================
 function renderBarcode(){
-  const m = currentMember;
-  const status = computedStatus();
-  const code = m.barcode || currentRowId;
-  const subLine = (priceNames[m.type]||m.type||'') + ' | ' + currentRowId;
-
-  document.getElementById('pass-photo-wrap').innerHTML = m.photo_url
-    ? `<img src="${m.photo_url}">`
-    : (m.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2);
-  document.getElementById('pass-name').textContent = m.name || '';
-  document.getElementById('pass-id').textContent = currentRowId;
-  document.getElementById('pass-status-row').innerHTML =
-    `<div class="pass-status-pill status-${status}"><span class="dot"></span>${STATUS_DOT_LABELS[status]}</div>`;
-  document.getElementById('pass-expiry-val').textContent = m.end ? formatEndDate(m.end) : '—';
-  document.getElementById('bc-modal-sub').textContent = subLine;
-
+  const code = currentMember.barcode || currentRowId;
+  document.getElementById('bc-name').textContent = currentMember.name || '';
+  document.getElementById('bc-sub').textContent = (priceNames[currentMember.type]||currentMember.type||'') + ' | ' + currentRowId;
   try{
     JsBarcode('#member-barcode-svg', code, {
-      format:'CODE128', width:2.2, height:70, displayValue:true,
+      format:'CODE128', width:2.2, height:80, displayValue:true,
       font:'Arial', fontSize:13, margin:6, background:'#ffffff', lineColor:'#000000'
     });
   }catch(e){ console.warn('barcode render error', e); }
-}
-
-function showFullBarcode(){
-  const code = currentMember.barcode || currentRowId;
-  try{
-    JsBarcode('#member-barcode-svg-modal', code, {
-      format:'CODE128', width:2.6, height:110, displayValue:true,
-      font:'Arial', fontSize:15, margin:8, background:'#ffffff', lineColor:'#000000'
-    });
-  }catch(e){ console.warn('barcode render error', e); }
-  document.getElementById('barcode-modal').classList.add('show');
-}
-function closeFullBarcode(){
-  document.getElementById('barcode-modal').classList.remove('show');
 }
 
 function getBarcodeDataURL(){
@@ -484,3 +458,48 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW register failed:', e));
   });
 }
+
+// ===================== تحميل التطبيق (PWA Install) =====================
+let deferredInstallPrompt = null;
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();               // امنع البانر التلقائي واستخدم الزرار بتاعنا
+  deferredInstallPrompt = e;
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const b = document.getElementById('install-btn');
+  if (b) b.style.display = 'none';
+  showToast('تم تثبيت التطبيق ✓');
+});
+
+function openInstallModal(){
+  const steps = document.getElementById('install-steps');
+  steps.innerHTML = isIOS()
+    ? '<li>افتح الصفحة في <b>Safari</b></li><li>اضغط زرار المشاركة <b><i class="fas fa-arrow-up-from-bracket"></i></b> اللي تحت</li><li>اختار <b>إضافة إلى الشاشة الرئيسية</b></li><li>اضغط <b>إضافة</b></li>'
+    : '<li>افتح قائمة المتصفح <b>⋮</b> (فوق)</li><li>اختار <b>تثبيت التطبيق</b> أو <b>إضافة إلى الشاشة الرئيسية</b></li><li>اضغط <b>تثبيت</b></li>';
+  document.getElementById('install-modal').classList.add('show');
+}
+function closeInstallModal(){ document.getElementById('install-modal').classList.remove('show'); }
+
+async function handleInstallClick(){
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') showToast('جاري تثبيت التطبيق...');
+    deferredInstallPrompt = null;
+  } else {
+    openInstallModal();             // iPhone أو متصفح مفيهوش تثبيت مباشر
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('install-btn');
+  if (!btn || isStandalone()) return;   // لو التطبيق مفتوح كتطبيق أصلًا، الزرار مايظهرش
+  btn.style.display = 'flex';
+  btn.addEventListener('click', handleInstallClick);
+  document.getElementById('install-modal').addEventListener('click', (e) => { if (e.target.id === 'install-modal') closeInstallModal(); });
+});

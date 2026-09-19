@@ -415,3 +415,22 @@ button,input{font-family:inherit}
   .pass-status-row{margin-top:12px}
   .pass-expiry{margin-top:12px}
 }
+
+/* ===== زرار تحميل التطبيق ===== */
+.btn-install{
+  margin-top:10px;background:rgba(37,99,235,0.1);border:1px dashed var(--gold3);color:var(--gold3);
+}
+.btn-install:active{transform:scale(.97)}
+.install-modal{
+  position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.install-modal.show{display:flex}
+.install-modal-inner{
+  width:100%;max-width:480px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:24px 24px 0 0;padding:22px 20px calc(22px + var(--safe-b));
+}
+.install-modal-title{font-size:16px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.install-modal-title i{color:var(--gold3)}
+.install-steps{padding-right:20px;margin-bottom:18px;color:var(--text2);font-size:13px;line-height:2.1}
+.install-steps b{color:var(--text)}
