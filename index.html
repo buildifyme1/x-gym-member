@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="X GYM">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -163,8 +163,10 @@
 // إظهار شريط التنقل بعد الدخول + دعم التبويبات الثلاثة (الرئيسية/الحضور/الباركود)
 const _origLoad = loadMemberData;
 loadMemberData = async function(){
-  await _origLoad();
+  // الشريط يظهر فورًا بمجرد دخول التطبيق، حتى لو حصل خطأ في عرض جزء من البيانات
   document.getElementById('bottom-nav').style.display = 'flex';
+  try{ await _origLoad(); }
+  catch(e){ console.error('loadMemberData error:', e); }
 };
 function switchToMain(tab){
   document.querySelectorAll('#app > .tab-panel').forEach(el=>el.classList.remove('active'));

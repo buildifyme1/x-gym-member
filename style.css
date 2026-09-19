@@ -434,3 +434,6 @@ button,input{font-family:inherit}
 .install-modal-title i{color:var(--gold3)}
 .install-steps{padding-right:20px;margin-bottom:18px;color:var(--text2);font-size:13px;line-height:2.1}
 .install-steps b{color:var(--text)}
+
+/* ===== زرار تفعيل الإشعارات داخل القائمة ===== */
+.notif-dot{display:none}

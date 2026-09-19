@@ -97,6 +97,8 @@ function logout(){
   _sb.auth.signOut();
   currentMember = null; currentRowId = null; currentUserId = null;
   document.getElementById('app').style.display = 'none';
+  const _nav = document.getElementById('bottom-nav'); if(_nav) _nav.style.display = 'none';
+  if(typeof switchToMain === 'function') switchToMain('home');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-id').value = '';
   document.getElementById('login-pin').value = '';
@@ -128,6 +130,7 @@ async function loadMemberData(){
   renderAttendance();
   renderBarcode();
   subscribeRealtime();
+  initNotifications();
 }
 
 async function loadPrices(){
@@ -158,13 +161,14 @@ function subscribeRealtime(){
           currentMember = { ...payload.new.data, photo_url: payload.new.photo_url || payload.new.data.photo_url || null };
           renderHome();
           renderBarcode();
+          renderNotifications();
         }
       })
     .subscribe();
 
   _attSub = _sb.channel('member-att-'+currentRowId)
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'xgym_attendance', filter:`member_id=eq.${currentRowId}` },
-      () => { loadAttendance().then(renderAttendance); })
+      (payload) => { loadAttendance().then(() => { renderAttendance(); renderNotifications(); }); handleNewAttendance(payload.new); })
     .subscribe();
 }
 
@@ -372,15 +376,47 @@ function renderAttendance(){
 
 // ===================== الباركود =====================
 function renderBarcode(){
-  const code = currentMember.barcode || currentRowId;
-  document.getElementById('bc-name').textContent = currentMember.name || '';
-  document.getElementById('bc-sub').textContent = (priceNames[currentMember.type]||currentMember.type||'') + ' | ' + currentRowId;
+  const m = currentMember;
+  const code = m.barcode || currentRowId;
+  const status = computedStatus();
+
+  // بطاقة العضوية (Membership Pass)
+  const photoWrap = document.getElementById('pass-photo-wrap');
+  if(photoWrap) photoWrap.innerHTML = m.photo_url
+    ? `<img src="${m.photo_url}" alt="">`
+    : (m.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2);
+  const nameEl = document.getElementById('pass-name');
+  if(nameEl) nameEl.textContent = m.name || '';
+  const idEl = document.getElementById('pass-id');
+  if(idEl) idEl.textContent = currentRowId;
+  const statusEl = document.getElementById('pass-status-row');
+  if(statusEl) statusEl.innerHTML = `<span class="pass-status-pill status-${status}"><span class="dot"></span>${STATUS_DOT_LABELS[status]}</span>`;
+  const expEl = document.getElementById('pass-expiry-val');
+  if(expEl) expEl.textContent = m.end ? formatEndDate(m.end) : '—';
+
   try{
     JsBarcode('#member-barcode-svg', code, {
       format:'CODE128', width:2.2, height:80, displayValue:true,
       font:'Arial', fontSize:13, margin:6, background:'#ffffff', lineColor:'#000000'
     });
   }catch(e){ console.warn('barcode render error', e); }
+}
+
+// عرض الباركود مكبّرًا (شاشة كاملة)
+function showFullBarcode(){
+  const code = currentMember.barcode || currentRowId;
+  const sub = document.getElementById('bc-modal-sub');
+  if(sub) sub.textContent = (currentMember.name || '') + ' | ' + currentRowId;
+  try{
+    JsBarcode('#member-barcode-svg-modal', code, {
+      format:'CODE128', width:2.4, height:110, displayValue:true,
+      font:'Arial', fontSize:14, margin:8, background:'#ffffff', lineColor:'#000000'
+    });
+  }catch(e){ console.warn('barcode modal render error', e); }
+  document.getElementById('barcode-modal').classList.add('show');
+}
+function closeFullBarcode(){
+  document.getElementById('barcode-modal').classList.remove('show');
 }
 
 function getBarcodeDataURL(){
@@ -442,6 +478,133 @@ function switchTab(tab){
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById(tab+'-panel').classList.add('active');
   document.getElementById('nav-'+tab).classList.add('active');
+}
+
+
+// ===================== الإشعارات (داخل التطبيق فقط) =====================
+const notifLogKey  = () => 'xgym_notif_log_' + currentRowId;
+const notifSeenKey = () => 'xgym_notif_seen_' + currentRowId;
+const notifCatchKey = () => 'xgym_notif_catchup_' + currentRowId;
+const notifDailyKey = () => 'xgym_daily_notif_' + currentRowId;
+
+function attTag(row){ return 'att-' + (row && row.id != null ? row.id : (row ? row.time : '')); }
+function todayKey(){ return new Date().toLocaleDateString('en-CA'); }
+
+function getNotifLog(){
+  try{ return JSON.parse(localStorage.getItem(notifLogKey()) || '[]'); }catch(e){ return []; }
+}
+// يضيف إشعار للسجل (بدون تكرار) — يرجّع true لو كان جديد
+function pushNotifLog(entry){
+  const log = getNotifLog();
+  if(log.some(n => n.id === entry.id)) return false;
+  log.unshift(entry);
+  log.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+  try{ localStorage.setItem(notifLogKey(), JSON.stringify(log.slice(0, 30))); }catch(e){}
+  return true;
+}
+
+// هل كان الاشتراك منتهيًا وقت الحضور ده؟
+function expiredAt(iso){
+  if(!currentMember || !currentMember.end) return false;
+  return new Date(iso) > new Date(currentMember.end + 'T23:59:59');
+}
+function attendanceEntry(row){
+  const time = formatActivityTime(row.time);
+  if(expiredAt(row.time)){
+    return { id: attTag(row), type:'expired', time: row.time,
+             text: 'تم تسجيل حضورك الساعة ' + time + ' — اشتراكك منتهي، برجاء التجديد' };
+  }
+  return { id: attTag(row), type:'att', time: row.time,
+           text: 'تم تسجيل حضورك في X GYM الساعة ' + time };
+}
+
+// حضور جديد لحظيًا (والتطبيق مفتوح)
+function handleNewAttendance(row){
+  if(!row) return;
+  const entry = attendanceEntry(row);
+  if(pushNotifLog(entry)){
+    showToast((entry.type === 'expired' ? '⚠️ ' : '✅ ') + entry.text);
+    renderNotifications();
+  }
+}
+
+// حضور حصل والتطبيق مقفول → يظهر كإشعار أول ما العضو يفتح التطبيق
+function catchUpAttendance(){
+  const last = attendanceRows[0] ? attendanceRows[0].time : '';
+  const prev = localStorage.getItem(notifCatchKey());
+  if(prev === null){ if(last) localStorage.setItem(notifCatchKey(), last); return; } // أول مرة: من غير تراكم قديم
+  attendanceRows.filter(a => a.time > prev).forEach(a => pushNotifLog(attendanceEntry(a)));
+  if(last) localStorage.setItem(notifCatchKey(), last);
+}
+
+// تذكير يومي بالأيام المتبقية (مرة كل يوم عند فتح التطبيق)
+function dailyReminderText(){
+  const d = daysRemaining();
+  if(d <= 0) return null;
+  if(d === 1) return 'باقي يوم واحد فقط على انتهاء اشتراكك';
+  return 'باقي ' + d + ' يوم على انتهاء اشتراكك';
+}
+function maybeShowDailyReminder(){
+  if(computedStatus() !== 'active') return;
+  if(localStorage.getItem(notifDailyKey()) === todayKey()) return;
+  const text = dailyReminderText();
+  if(!text) return;
+  localStorage.setItem(notifDailyKey(), todayKey());
+  pushNotifLog({ id:'daily-' + todayKey(), type:'daily', time:new Date().toISOString(), text });
+  showToast('⏳ ' + text);
+}
+
+// ---- قائمة الإشعارات ----
+const NOTIF_ICONS = { att:'fa-circle-check', daily:'fa-hourglass-half', expired:'fa-triangle-exclamation' };
+
+function renderNotifications(){
+  const list = document.getElementById('notif-list');
+  if(!list || !currentMember) return;
+  const items = [];
+
+  // حالة الاشتراك الحالية دايمًا فوق
+  const status = computedStatus();
+  if(status === 'expired'){
+    items.push(`<div class="notif-item"><i class="fas fa-circle-xmark" style="color:var(--red)"></i><div class="notif-text">اشتراكك منتهي — برجاء التجديد.</div></div>`);
+  } else if(status === 'active' && dailyReminderText()){
+    items.push(`<div class="notif-item"><i class="fas fa-hourglass-half"></i><div class="notif-text">${dailyReminderText()}</div></div>`);
+  }
+
+  const log = getNotifLog();
+  log.forEach(n => {
+    const color = n.type === 'expired' ? 'style="color:var(--red)"' : '';
+    items.push(`<div class="notif-item"><i class="fas ${NOTIF_ICONS[n.type] || 'fa-bell'}" ${color}></i><div class="notif-text">${n.text}<br><span style="color:var(--text3);font-size:11px">${formatActivityDate(n.time)} · ${formatActivityTime(n.time)}</span></div></div>`);
+  });
+
+  if(!items.length) items.push(`<div class="empty-state" style="padding:26px 14px"><i class="fas fa-bell-slash"></i>لا توجد إشعارات</div>`);
+  list.innerHTML = items.join('');
+
+  // النقطة الحمراء: فيه إشعارات جديدة لم تُشاهد
+  const seen = localStorage.getItem(notifSeenKey()) || '';
+  const dot = document.getElementById('notif-dot');
+  if(dot) dot.style.display = log.some(n => (n.time || '') > seen) ? 'block' : 'none';
+}
+
+function toggleNotifications(){
+  const panel = document.getElementById('notif-panel');
+  if(!panel) return;
+  const open = panel.classList.toggle('show');
+  if(open){
+    localStorage.setItem(notifSeenKey(), new Date().toISOString());
+    const dot = document.getElementById('notif-dot'); if(dot) dot.style.display = 'none';
+  }
+}
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notif-panel');
+  if(panel && panel.classList.contains('show') && !e.target.closest('.notif-wrap')) panel.classList.remove('show');
+});
+
+function initNotifications(){
+  try{
+    catchUpAttendance();
+    maybeShowDailyReminder();
+    renderNotifications();
+  }catch(e){ console.warn('initNotifications error', e); }
 }
 
 // ===================== بدء التشغيل =====================
