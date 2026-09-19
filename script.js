@@ -432,7 +432,8 @@ function formatDate(iso){
 }
 function formatEndDate(iso){
   const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  // علامة LRM عشان التاريخ يتعرض "28 Aug 2026" مش "Aug 2026 28" جوّه صفحة عربي
+  return '\u200E' + d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) + '\u200E';
 }
 function formatActivityDate(iso){
   return new Date(iso).toLocaleDateString('en-CA').replace(/-/g,'/');
@@ -527,6 +528,49 @@ function renderAttendance(){
 }
 
 // ===================== الباركود =====================
+// JsBarcode بيمسح الـstyle بتاع العنصر بعد الرسم (وده كان سبب خروج الباركود
+// برّه الكارت في الموبايل)، فبنحدد المقاس بنفسنا ونرجّع الـstyle بعد الرسم.
+// كل خط (module) بياخد عدد صحيح من بكسلات الشاشة عشان الخطوط تطلع حادة
+// وأسهل في قراءة الاسكانر.
+function drawBarcode(selector, code, availWidth, opts){
+  opts = opts || {};
+  const el = document.querySelector(selector);
+  if(!el) return null;
+  const quiet = opts.quiet != null ? opts.quiet : 2;      // مسافة فاضية على الجنبين (بالـmodule)
+  try{
+    // 1) رسمة تجريبية عشان نعرف عدد الـmodules الفعلي للكود ده
+    JsBarcode(el, code, { format:'CODE128', width:1, height:10, margin:0, displayValue:false });
+    const modules = parseFloat(el.getAttribute('width')) + quiet * 2;
+
+    // 2) أكبر عدد صحيح من بكسلات الشاشة لكل module بيتّسع في العرض المتاح
+    const dpr = window.devicePixelRatio || 1;
+    const px = Math.max(1, Math.floor((availWidth * dpr) / modules));
+    const w = Math.min(px / dpr, opts.maxModule || 4);
+
+    // 3) الرسمة النهائية
+    JsBarcode(el, code, {
+      format:'CODE128', width:w, height:opts.height || 90, displayValue:true,
+      font:'Arial', fontSize:opts.fontSize || 14, textMargin:4,
+      marginLeft:quiet * w, marginRight:quiet * w,
+      marginTop: opts.marginTop != null ? opts.marginTop : 6,
+      marginBottom: opts.marginBottom != null ? opts.marginBottom : 4,
+      background:'#ffffff', lineColor:'#000000'
+    });
+  }catch(e){ console.warn('barcode render error', e); return null; }
+  el.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;shape-rendering:crispEdges';
+  return el;
+}
+
+// العرض المتاح جوّه كارت الباركود (لو التاب مخفي بنقدّره من عرض الشاشة)
+function passBarcodeAvail(){
+  const card = document.querySelector('.pass-barcode-card');
+  if(card && card.clientWidth > 0){
+    const cs = getComputedStyle(card);
+    return card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  }
+  return Math.min(window.innerWidth, 480) - 32 - 40 - 2 - 24;
+}
+
 function renderBarcode(){
   const m = currentMember;
   const code = m.barcode || currentRowId;
@@ -546,40 +590,116 @@ function renderBarcode(){
   const expEl = document.getElementById('pass-expiry-val');
   if(expEl) expEl.textContent = m.end ? formatEndDate(m.end) : '—';
 
-  try{
-    JsBarcode('#member-barcode-svg', code, {
-      format:'CODE128', width:2.2, height:80, displayValue:true,
-      font:'Arial', fontSize:13, margin:6, background:'#ffffff', lineColor:'#000000'
-    });
-  }catch(e){ console.warn('barcode render error', e); }
+  drawBarcode('#member-barcode-svg', code, passBarcodeAvail(), { height:90, fontSize:14 });
 }
 
-// عرض الباركود مكبّرًا (شاشة كاملة)
-function showFullBarcode(){
+// ---- عرض الباركود مكبّرًا (شاشة كاملة بيضاء) ----
+let _bcRotated = false;
+let _wakeLock = null;
+
+async function acquireWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+      _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+    }
+  }catch(e){ /* مش كل المتصفحات بتدعمه */ }
+}
+function releaseWakeLock(){
+  try{ if(_wakeLock){ _wakeLock.release(); _wakeLock = null; } }catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  const modal = document.getElementById('barcode-modal');
+  if(!document.hidden && modal && modal.classList.contains('show') && !_wakeLock) acquireWakeLock();
+});
+
+function renderModalBarcode(){
+  if(!currentMember) return;
   const code = currentMember.barcode || currentRowId;
+  const svg = document.getElementById('member-barcode-svg-modal');
+  const stage = document.getElementById('bc-stage');
+  if(!svg || !stage) return;
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  if(!_bcRotated){
+    stage.style.width = ''; stage.style.height = '';
+    drawBarcode('#member-barcode-svg-modal', code, Math.min(vw, 520) - 32, { height:140, fontSize:16, quiet:4 });
+    return;
+  }
+  // وضع التدوير: الباركود بياخد طول الشاشة كله (خطوط أعرض وأطول)
+  const barH = Math.max(90, Math.min(240, vw - 32 - 46));
+  drawBarcode('#member-barcode-svg-modal', code, vh - 250, { height:barH, fontSize:16, quiet:4 });
+  const w = parseFloat(svg.getAttribute('width')), h = parseFloat(svg.getAttribute('height'));
+  stage.style.width = h + 'px'; stage.style.height = w + 'px';
+  svg.style.cssText = 'display:block;position:absolute;left:50%;top:50%;max-width:none;' +
+    'width:' + w + 'px;height:' + h + 'px;transform:translate(-50%,-50%) rotate(90deg);shape-rendering:crispEdges';
+}
+
+function updateRotateBtn(){
+  const b = document.getElementById('bc-rotate-btn');
+  if(b) b.innerHTML = _bcRotated
+    ? '<i class="fas fa-rotate-left"></i> الوضع العادي'
+    : '<i class="fas fa-rotate"></i> تكبير (تدوير)';
+}
+function toggleBarcodeRotate(){
+  _bcRotated = !_bcRotated;
+  updateRotateBtn();
+  renderModalBarcode();
+}
+
+function showFullBarcode(){
   const sub = document.getElementById('bc-modal-sub');
   if(sub) sub.textContent = (currentMember.name || '') + ' | ' + currentRowId;
-  try{
-    JsBarcode('#member-barcode-svg-modal', code, {
-      format:'CODE128', width:2.4, height:110, displayValue:true,
-      font:'Arial', fontSize:14, margin:8, background:'#ffffff', lineColor:'#000000'
-    });
-  }catch(e){ console.warn('barcode modal render error', e); }
+  const status = computedStatus();
+  const st = document.getElementById('bc-modal-status');
+  if(st){ st.className = 'bc-status status-' + status; st.innerHTML = '<span class="dot"></span>' + STATUS_DOT_LABELS[status]; }
+  _bcRotated = false;
+  updateRotateBtn();
+  document.body.classList.add('bc-open');      // يخفي شريط التنقل السفلي
   document.getElementById('barcode-modal').classList.add('show');
+  renderModalBarcode();
+  acquireWakeLock();        // الشاشة متطفيش وهو معروض
 }
 function closeFullBarcode(){
   document.getElementById('barcode-modal').classList.remove('show');
+  document.body.classList.remove('bc-open');
+  releaseWakeLock();
 }
 
+// لو الشاشة اتقلبت أو اتغيّر حجمها: أعد رسم الباركود على المقاس الجديد
+let _bcResizeTimer = null;
+function onBarcodeResize(){
+  clearTimeout(_bcResizeTimer);
+  _bcResizeTimer = setTimeout(() => {
+    if(!currentMember) return;
+    const modal = document.getElementById('barcode-modal');
+    if(modal && modal.classList.contains('show')) renderModalBarcode();
+    const panel = document.getElementById('barcode-panel-wrap');
+    if(panel && panel.classList.contains('active')) renderBarcode();
+  }, 150);
+}
+window.addEventListener('resize', onBarcodeResize);
+window.addEventListener('orientationchange', onBarcodeResize);
+
+// صورة الباركود للتحميل/الطباعة: بنرسم باركود جديد بدقة عالية (مش النسخة اللي على الشاشة)
 function getBarcodeDataURL(){
   return new Promise(resolve=>{
-    const svg = document.getElementById('member-barcode-svg');
-    const svgData = new XMLSerializer().serializeToString(svg);
+    const code = currentMember.barcode || currentRowId;
+    const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    try{
+      JsBarcode(tmp, code, {
+        format:'CODE128', width:3, height:70, displayValue:true, font:'Arial', fontSize:16, textMargin:3,
+        marginLeft:30, marginRight:30, marginTop:6, marginBottom:4, background:'#ffffff', lineColor:'#000000'
+      });
+    }catch(e){ resolve(null); return; }
+    const svgData = new XMLSerializer().serializeToString(tmp);
     const blob = new Blob([svgData], { type:'image/svg+xml' });
     const url = URL.createObjectURL(blob);
+    const S = 2;   // دقة مضاعفة عشان الصورة تطلع حادة
     const canvas = document.createElement('canvas');
-    canvas.width = 560; canvas.height = 220;
+    canvas.width = 560 * S; canvas.height = 220 * S;
     const ctx = canvas.getContext('2d');
+    ctx.scale(S, S);
     ctx.fillStyle = '#fff'; ctx.fillRect(0,0,560,220);
     const grad = ctx.createLinearGradient(0,0,560,0);
     grad.addColorStop(0,'#2563EB'); grad.addColorStop(1,'#1D4ED8');
@@ -592,7 +712,7 @@ function getBarcodeDataURL(){
     ctx.fillText((priceNames[currentMember.type]||currentMember.type||'')+' | '+currentRowId, 280, 84);
     const img = new Image();
     img.onload = () => {
-      const bw = Math.min(440, img.width); const bh = img.height * (bw/img.width);
+      const bw = Math.min(500, img.width); const bh = img.height * (bw/img.width);
       ctx.drawImage(img, (560-bw)/2, 95, bw, bh);
       URL.revokeObjectURL(url);
       ctx.fillStyle = grad; ctx.fillRect(0,213,560,7);

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -121,8 +121,8 @@
       <div class="pass-name" id="pass-name"></div>
       <div class="pass-id" id="pass-id"></div>
 
-      <div class="pass-barcode-card">
-        <svg id="member-barcode-svg" style="max-width:100%"></svg>
+      <div class="pass-barcode-card" onclick="showFullBarcode()">
+        <svg id="member-barcode-svg"></svg>
       </div>
 
       <div class="pass-status-row" id="pass-status-row"></div>
@@ -146,8 +146,13 @@
     <div class="barcode-modal-inner">
       <div class="gym-name">X GYM</div>
       <div id="bc-modal-sub" class="member-line"></div>
-      <svg id="member-barcode-svg-modal" style="max-width:100%"></svg>
-      <button class="btn btn-outline" onclick="closeFullBarcode()"><i class="fas fa-xmark"></i> إغلاق</button>
+      <div id="bc-modal-status" class="bc-status"></div>
+      <div class="bc-stage" id="bc-stage"><svg id="member-barcode-svg-modal"></svg></div>
+      <div class="bc-hint"><i class="fas fa-sun"></i> ارفع سطوع الشاشة لأعلى درجة عشان الاسكانر يقرأ بسرعة</div>
+      <div class="bc-actions">
+        <button class="btn btn-outline" id="bc-rotate-btn" onclick="toggleBarcodeRotate()"><i class="fas fa-rotate"></i> تكبير (تدوير)</button>
+        <button class="btn btn-outline" onclick="closeFullBarcode()"><i class="fas fa-xmark"></i> إغلاق</button>
+      </div>
     </div>
   </div>
 
@@ -199,6 +204,8 @@ function switchToMain(tab){
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById(tab==='home' ? 'home-panel' : tab+'-panel-wrap').classList.add('active');
   document.getElementById('nav-'+tab).classList.add('active');
+  // الباركود بيتظبط على عرض الكارت، فنعيد رسمه أول ما التاب يظهر
+  if(tab==='barcode' && typeof renderBarcode==='function' && typeof currentMember!=='undefined' && currentMember) renderBarcode();
 }
 </script>
 </body>
