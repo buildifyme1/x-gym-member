@@ -500,3 +500,12 @@ button,input{font-family:inherit}
 .video-meta{margin-top:14px}
 .video-meta-title{font-size:15px;font-weight:800;color:var(--text)}
 .video-meta-note{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.7}
+
+/* ===== شريط "غير متصل" ===== */
+.offline-bar{
+  display:none;align-items:center;gap:8px;margin:0 18px 8px;padding:8px 12px;
+  border-radius:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);
+  color:var(--amber);font-size:12px;font-weight:700;line-height:1.5;
+}
+.offline-bar.show{display:flex}
+.offline-bar i{font-size:13px;flex-shrink:0}

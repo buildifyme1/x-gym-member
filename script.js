@@ -41,6 +41,109 @@ function showToast(msg){
   t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
+// ===================== الاستخدام بدون نت =====================
+// بعد أول تسجيل دخول ناجح بنحفظ نسخة من بيانات العضو (الاشتراك + الحضور)
+// على الموبايل، وعشان كده الصفحة والباركود بيفتحوا حتى من غير نت.
+// أول ما النت يرجع بنجيب البيانات الجديدة تلقائيًا.
+const SNAP_KEY = 'xgym_offline_snapshot';
+let offlineMode = false;     // true = بنعرض بيانات محفوظة مش لحظية
+let _snapSavedAt = null;
+
+function withTimeout(promise, ms){
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms);
+    Promise.resolve(promise).then(v => { clearTimeout(t); resolve(v); }, e => { clearTimeout(t); reject(e); });
+  });
+}
+function isNetworkError(err){
+  if(!navigator.onLine) return true;
+  if(!err) return false;
+  return /fetch|network|load failed|timeout|abort/i.test(String(err.message || '') + ' ' + String(err.name || ''));
+}
+
+function saveOfflineSnapshot(){
+  if(!currentMember || !currentRowId) return;
+  try{
+    _snapSavedAt = Date.now();
+    localStorage.setItem(SNAP_KEY, JSON.stringify({
+      userId: currentUserId, rowId: currentRowId, member: currentMember,
+      attendance: attendanceRows.slice(0, 200), prices: priceNames, savedAt: _snapSavedAt
+    }));
+  }catch(e){ console.warn('snapshot save failed', e); }
+}
+function readOfflineSnapshot(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SNAP_KEY) || 'null');
+    return (s && s.rowId && s.member) ? s : null;
+  }catch(e){ return null; }
+}
+function clearOfflineSnapshot(){
+  try{ localStorage.removeItem(SNAP_KEY); }catch(e){}
+  _snapSavedAt = null;
+}
+
+function updateOfflineBar(){
+  const bar = document.getElementById('offline-bar');
+  if(!bar) return;
+  if(!offlineMode && navigator.onLine){ bar.classList.remove('show'); return; }
+  const txt = document.getElementById('offline-bar-text');
+  if(txt){
+    txt.textContent = (offlineMode && _snapSavedAt)
+      ? 'وضع عدم الاتصال — آخر تحديث للبيانات: ' + formatDate(new Date(_snapSavedAt).toISOString())
+      : 'أنت غير متصل بالإنترنت';
+  }
+  bar.classList.add('show');
+}
+
+// يعرض آخر بيانات محفوظة (من غير أي اتصال بالسيرفر)
+function applyOfflineSnapshot(snap){
+  currentUserId = snap.userId;
+  currentRowId = snap.rowId;
+  currentMember = snap.member;
+  attendanceRows = snap.attendance || [];
+  priceNames = snap.prices || {};
+  _snapSavedAt = snap.savedAt || null;
+  offlineMode = true;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const nav = document.getElementById('bottom-nav'); if(nav) nav.style.display = 'flex';
+  renderHome(); renderAttendance(); renderBarcode();
+  try{ initNotifications(); }catch(e){ console.warn(e); }
+  updateOfflineBar();
+}
+
+// يحمّل صورة العضو في كاش الـService Worker عشان تظهر بدون نت
+function warmPhotoCache(){
+  const u = currentMember && currentMember.photo_url;
+  if(u && navigator.onLine) fetch(u, { mode:'no-cors' }).catch(() => {});
+}
+
+// لما النت يرجع: هات البيانات الجديدة
+let _syncing = false;
+async function syncFromServer(){
+  if(!offlineMode || !currentUserId || !navigator.onLine || _syncing) return;
+  _syncing = true;
+  try{
+    const res = await withTimeout(_sb.auth.getSession(), 8000);
+    const session = res && res.data && res.data.session;
+    if(session){
+      currentUserId = session.user.id;
+      await loadMemberData();
+      if(!offlineMode) showToast('تم تحديث بياناتك ✓');
+    }else if(!(res && res.error && isNetworkError(res.error))){
+      showToast('انتهت الجلسة — سجّل دخولك مرة أخرى');
+      logout();
+    }
+  }catch(e){ /* النت لسه ضعيف — نفضل على البيانات المحفوظة */ }
+  _syncing = false;
+}
+window.addEventListener('online', () => { updateOfflineBar(); syncFromServer(); });
+window.addEventListener('offline', () => {
+  updateOfflineBar();
+  if(currentMember) showToast('انقطع الاتصال — التطبيق شغال بآخر بيانات محفوظة');
+});
+document.addEventListener('visibilitychange', () => { if(!document.hidden) syncFromServer(); });
+
 // ===================== تسجيل الدخول =====================
 async function doLogin(){
   const idInput = document.getElementById('login-id').value.trim();
@@ -84,17 +187,32 @@ async function doLogin(){
 }
 
 async function tryRestoreSession(){
-  const { data } = await _sb.auth.getSession();
-  if(data && data.session){
-    currentUserId = data.session.user.id;
+  const snap = readOfflineSnapshot();
+  let session = null, err = null;
+  try{
+    const res = await withTimeout(_sb.auth.getSession(), 4000);
+    session = (res && res.data && res.data.session) || null;
+    err = (res && res.error) || null;
+  }catch(e){ err = e; }
+
+  if(session){
+    currentUserId = session.user.id;
     await loadMemberData();
+    return;
+  }
+  // مفيش جلسة صالحة دلوقتي: لو السبب انقطاع النت وعندنا بيانات محفوظة، اعرضها
+  if(snap && (!navigator.onLine || (err && isNetworkError(err)))){
+    applyOfflineSnapshot(snap);
   }
 }
 
 function logout(){
   if(_attSub) _sb.removeChannel(_attSub);
   if(_memSub) _sb.removeChannel(_memSub);
-  _sb.auth.signOut();
+  // من غير نت: خروج محلي بس (طلب الخروج للسيرفر محتاج اتصال)
+  _sb.auth.signOut(navigator.onLine ? undefined : { scope:'local' }).catch(() => {});
+  clearOfflineSnapshot();
+  offlineMode = false;
   currentMember = null; currentRowId = null; currentUserId = null;
   document.getElementById('app').style.display = 'none';
   const _nav = document.getElementById('bottom-nav'); if(_nav) _nav.style.display = 'none';
@@ -110,45 +228,73 @@ function logout(){
 async function loadMemberData(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+
+  const snap = readOfflineSnapshot();
+  const sameUser = !!snap && (!currentUserId || snap.userId === currentUserId);
+
+  // مفيش نت خالص وعندنا بيانات محفوظة → اعرضها فورًا
+  if(!navigator.onLine && sameUser){ applyOfflineSnapshot(snap); return; }
+
   document.getElementById('home-panel').innerHTML = '<div class="spinner"></div>';
 
-  const { data: row, error } = await _sb
-    .from('xgym_members')
-    .select('id,data,photo_url,user_id')
-    .eq('user_id', currentUserId)
-    .single();
+  let row = null, error = null;
+  try{
+    const res = await withTimeout(
+      _sb.from('xgym_members').select('id,data,photo_url,user_id').eq('user_id', currentUserId).single(),
+      10000
+    );
+    row = res.data; error = res.error;
+  }catch(e){ error = e; }
 
   if(error || !row){
+    // النت ضعيف/مقطوع → نفضل على البيانات المحفوظة بدل ما نطلّع العضو
+    if(sameUser && isNetworkError(error)){ applyOfflineSnapshot(snap); return; }
     showToast('تعذر جلب بياناتك — حاول تسجيل الدخول مرة أخرى');
     logout();
     return;
   }
 
+  offlineMode = false;
   currentRowId = row.id;
   currentMember = { ...row.data, photo_url: row.photo_url || row.data.photo_url || null };
 
   await Promise.all([ loadPrices(), loadAttendance() ]);
+  saveOfflineSnapshot();
+  updateOfflineBar();
   renderHome();
   renderAttendance();
   renderBarcode();
   subscribeRealtime();
   initNotifications();
+  warmPhotoCache();
 }
 
 async function loadPrices(){
-  const { data } = await _sb.from('xgym_prices').select('key,name');
-  priceNames = {};
-  (data||[]).forEach(p => priceNames[p.key] = p.name);
+  try{
+    const { data, error } = await _sb.from('xgym_prices').select('key,name');
+    if(error || !data){
+      if(!Object.keys(priceNames).length){ const s = readOfflineSnapshot(); if(s) priceNames = s.prices || {}; }
+      return;
+    }
+    priceNames = {};
+    data.forEach(p => priceNames[p.key] = p.name);
+  }catch(e){ console.warn('loadPrices failed', e); }
 }
 
 async function loadAttendance(){
-  const { data } = await _sb
-    .from('xgym_attendance')
-    .select('*')
-    .eq('member_id', currentRowId)
-    .order('time', { ascending:false })
-    .limit(200);
-  attendanceRows = data || [];
+  try{
+    const { data, error } = await _sb
+      .from('xgym_attendance')
+      .select('*')
+      .eq('member_id', currentRowId)
+      .order('time', { ascending:false })
+      .limit(200);
+    if(error || !data){
+      if(!attendanceRows.length){ const s = readOfflineSnapshot(); if(s && s.rowId === currentRowId) attendanceRows = s.attendance || []; }
+      return;
+    }
+    attendanceRows = data;
+  }catch(e){ console.warn('loadAttendance failed', e); }
 }
 
 // ===================== Realtime =====================
@@ -164,13 +310,14 @@ function subscribeRealtime(){
           renderHome();
           renderBarcode();
           renderNotifications();
+          saveOfflineSnapshot();
         }
       })
     .subscribe();
 
   _attSub = _sb.channel('member-att-'+currentRowId)
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'xgym_attendance', filter:`member_id=eq.${currentRowId}` },
-      (payload) => { loadAttendance().then(() => { renderAttendance(); renderNotifications(); }); handleNewAttendance(payload.new); })
+      (payload) => { loadAttendance().then(() => { renderAttendance(); renderNotifications(); saveOfflineSnapshot(); }); handleNewAttendance(payload.new); })
     .subscribe();
 }
 
@@ -307,6 +454,7 @@ function formatRelativeAttendance(iso){
 async function handlePhotoUpload(input){
   const file = input.files[0];
   if(!file) return;
+  if(!navigator.onLine){ showToast('رفع الصورة محتاج اتصال بالإنترنت'); input.value = ''; return; }
   showToast('جاري رفع الصورة...');
   try{
     const resizedBlob = await resizeImage(file, 480);
@@ -318,6 +466,8 @@ async function handlePhotoUpload(input){
     const { error: updErr } = await _sb.from('xgym_members').update({ photo_url:url }).eq('id', currentRowId);
     if(updErr) throw updErr;
     currentMember.photo_url = url;
+    saveOfflineSnapshot();
+    warmPhotoCache();
     renderHome();
     showToast('تم تحديث صورتك بنجاح');
   }catch(e){
@@ -699,7 +849,9 @@ function trainingBack(){
 
 function playTrainingVideo(si, vi){
   const v = ((trainingSystems()[si] || {}).videos || [])[vi];
-  if(!v || !v.url) return;
+  if(!v) return;
+  if(!v.url){ showToast('الفيديو هيتضاف قريبًا'); return; }
+  if(!navigator.onLine){ showToast('الفيديو محتاج اتصال بالإنترنت'); return; }
   const yt = ytId(v.url), vm = vimeoId(v.url);
   let html = '';
   if(yt){
